@@ -14,24 +14,23 @@ gcloud --project="$CLOUDSDK_CORE_PROJECT" compute instances create lantern-colle
 
 echo "export WPT_KEY=\"$WPT_KEY\"" > .tmp_wpt_key
 # Instance needs time to start up.
-until gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./.tmp_wpt_key lantern-collect-instance:/tmp/wpt-key
+until gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./.tmp_wpt_key lantern-collect-instance:/tmp/wpt-key --zone=us-central1-a
 do
   echo "Waiting for start up ..."
   sleep 10
 done
 rm .tmp_wpt_key
 
-gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./lighthouse-core/scripts/lantern/collect/gcp-setup.sh lantern-collect-instance:/tmp/gcp-setup.sh
-gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./lighthouse-core/scripts/lantern/collect/gcp-run.sh lantern-collect-instance:/tmp/gcp-run.sh
-gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh lantern-collect-instance --command="bash /tmp/gcp-setup.sh"
-gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh lantern-collect-instance --command="sudo -u lighthouse sh -c 'nohup /home/lighthouse/gcp-run.sh > /home/lighthouse/collect.log 2>&1 < /dev/null &'"
+gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./lighthouse-core/scripts/lantern/collect/gcp-setup.sh lantern-collect-instance:/tmp/gcp-setup.sh --zone=us-central1-a
+gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./lighthouse-core/scripts/lantern/collect/gcp-run.sh lantern-collect-instance:/tmp/gcp-run.sh --zone=us-central1-a
+gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh lantern-collect-instance --command="bash /tmp/gcp-setup.sh" --zone=us-central1-a
+gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh lighthouse@lantern-collect-instance --command="sh -c 'nohup /home/lighthouse/gcp-run.sh > /home/lighthouse/collect.log 2>&1 < /dev/null &'" --zone=us-central1-a
 
 set +x
 
 echo "Collection has started."
 echo "Check-in on progress anytime by running..."
-echo "  $ gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh lantern-collect-instance"
-echo "  $ sudo -u lighthouse tail -f /home/lighthouse/collect.log"
+echo "  $ gcloud --project="$CLOUDSDK_CORE_PROJECT" compute ssh lighthouse@lantern-collect-instance --command='tail -f collect.log' --zone=us-central1-a"
 
 echo "When complete run..."
 echo "  $ gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp lantern-collect-instance:/home/lighthouse/src/lighthouse/dist/collect-lantern-traces.zip ./collect-lantern-traces.zip"
